@@ -2,7 +2,8 @@
 
 Bienvenido al orquestador de microservicios para el ecosistema **BCS Mortgage**. Esta herramienta está diseñada para facilitar el desarrollo local, permitiéndote gestionar múltiples servicios de NestJS desde una única interfaz web premium.
 
-![Dashboard Preview](https://via.placeholder.com/800x450/111827/FFFFFF?text=BCS+Mortgage+Orchestrator+Dashboard)
+![Dashboard Preview](https://res.cloudinary.com/dm9rh1ypo/image/upload/v1772046800/Screenshot_2026-02-25_at_2.07.19_PM_ncpsp1.png)
+![Dashboard Preview](https://res.cloudinary.com/dm9rh1ypo/image/upload/v1772046797/Screenshot_2026-02-25_at_2.08.16_PM_u6uqeq.png)
 
 ## 🚀 Características Principales
 
