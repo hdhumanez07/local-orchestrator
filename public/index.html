@@ -1,0 +1,1881 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BCS Mortgage — Microservices Orchestrator</title>
+    <meta
+      name="description"
+      content="Dashboard de control para los microservicios de BCS Mortgage"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ─── Reset & Tokens ─────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #080b14;
+        --bg2: #0d111f;
+        --bg3: #111827;
+        --surface: rgba(255, 255, 255, 0.04);
+        --border: rgba(255, 255, 255, 0.08);
+        --border2: rgba(255, 255, 255, 0.14);
+        --text: #e2e8f0;
+        --text2: #94a3b8;
+        --text3: #64748b;
+
+        --indigo: #6366f1;
+        --violet: #8b5cf6;
+        --cyan: #06b6d4;
+        --emerald: #10b981;
+        --amber: #f59e0b;
+        --red: #ef4444;
+        --pink: #ec4899;
+
+        --success: #10b981;
+        --warn: #f59e0b;
+        --error: #ef4444;
+        --info: #94a3b8;
+        --debug: #64748b;
+
+        --font: "Inter", system-ui, sans-serif;
+        --mono: "JetBrains Mono", monospace;
+        --radius: 14px;
+        --radius-sm: 8px;
+        --shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+        --glow-indigo: 0 0 24px rgba(99, 102, 241, 0.3);
+        --glow-violet: 0 0 24px rgba(139, 92, 246, 0.3);
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* ─── Background grid ──────────────────────────────────────────────────── */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ─── Scrollbar ────────────────────────────────────────────────────────── */
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.4);
+        border-radius: 9999px;
+      }
+
+      /* ─── Layout ────────────────────────────────────────────────────────────── */
+      .app {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* ─── Header ────────────────────────────────────────────────────────────── */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 28px;
+        background: rgba(8, 11, 20, 0.85);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-logo {
+        width: 38px;
+        height: 38px;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        box-shadow: var(--glow-indigo);
+      }
+
+      .brand-text h1 {
+        font-size: 15px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #e2e8f0, #a5b4fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.3px;
+      }
+      .brand-text p {
+        font-size: 11px;
+        color: var(--text3);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .header-stats {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .stat-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .stat-pill .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text3);
+        flex-shrink: 0;
+      }
+      .stat-pill.running .dot {
+        background: var(--emerald);
+        box-shadow: 0 0 6px var(--emerald);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .stat-pill.error .dot {
+        background: var(--red);
+      }
+      .stat-pill.total .dot {
+        background: var(--indigo);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .ws-indicator {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--text3);
+        font-weight: 500;
+      }
+      .ws-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--red);
+        transition: background 0.5s;
+      }
+      .ws-dot.connected {
+        background: var(--emerald);
+        box-shadow: 0 0 6px var(--emerald);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      /* ─── Toolbar ────────────────────────────────────────────────────────────── */
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 28px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .tab-group {
+        display: flex;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+      }
+
+      .tab-btn {
+        padding: 7px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text3);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: var(--font);
+        letter-spacing: 0.3px;
+      }
+      .tab-btn:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .tab-btn.active {
+        color: white;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: white;
+        border-color: rgba(99, 102, 241, 0.3);
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--glow-indigo);
+      }
+
+      .btn-ghost {
+        background: var(--surface);
+        color: var(--text2);
+        border-color: var(--border);
+      }
+      .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        border-color: var(--border2);
+      }
+
+      .btn-danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--red);
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.2);
+      }
+
+      .btn-success {
+        background: rgba(16, 185, 129, 0.12);
+        color: var(--emerald);
+        border-color: rgba(16, 185, 129, 0.2);
+      }
+      .btn-success:hover {
+        background: rgba(16, 185, 129, 0.2);
+      }
+
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      /* ─── Main Content ──────────────────────────────────────────────────────── */
+      .main {
+        flex: 1;
+        padding: 0 28px 28px;
+      }
+
+      /* ─── View: Services ─────────────────────────────────────────────────────── */
+      #view-services {
+        display: block;
+      }
+      #view-logs {
+        display: none;
+      }
+
+      /* ─── Services Grid ──────────────────────────────────────────────────────── */
+      .section-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text3);
+        margin: 20px 0 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+      }
+
+      /* ─── Service Card ──────────────────────────────────────────────────────── */
+      .service-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+        cursor: default;
+      }
+
+      .service-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--color),
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .service-card:hover {
+        border-color: var(--border2);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+      }
+      .service-card:hover::before {
+        opacity: 1;
+      }
+
+      .service-card.status-running {
+        border-color: rgba(16, 185, 129, 0.2);
+      }
+      .service-card.status-running::before {
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--emerald),
+          transparent
+        );
+        opacity: 1;
+      }
+      .service-card.status-starting {
+        border-color: rgba(245, 158, 11, 0.2);
+      }
+      .service-card.status-error {
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+
+      .card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+
+      .card-info h3 {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        margin-bottom: 2px;
+      }
+      .card-info p {
+        font-size: 11px;
+        color: var(--text3);
+        font-weight: 400;
+      }
+
+      /* Status Badge */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        flex-shrink: 0;
+      }
+      .status-badge .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+
+      .badge-stopped {
+        background: rgba(100, 116, 139, 0.15);
+        color: var(--text3);
+      }
+      .badge-stopped .dot {
+        background: var(--text3);
+      }
+      .badge-starting {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--amber);
+      }
+      .badge-starting .dot {
+        background: var(--amber);
+        animation: pulse 1s ease-in-out infinite;
+      }
+      .badge-running {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--emerald);
+      }
+      .badge-running .dot {
+        background: var(--emerald);
+        box-shadow: 0 0 6px var(--emerald);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .badge-stopping {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--red);
+      }
+      .badge-stopping .dot {
+        background: var(--red);
+      }
+      .badge-error {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--red);
+      }
+      .badge-error .dot {
+        background: var(--red);
+      }
+
+      /* Port & Meta */
+      .card-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: var(--radius-sm);
+        font-size: 10px;
+        font-weight: 600;
+        font-family: var(--mono);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        color: var(--text2);
+      }
+      .meta-chip.gateway {
+        background: rgba(99, 102, 241, 0.12);
+        border-color: rgba(99, 102, 241, 0.25);
+        color: #a5b4fc;
+      }
+
+      /* Tunnel URL */
+      .tunnel-url-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 14px;
+        padding: 8px 10px;
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: var(--radius-sm);
+        animation: fadeIn 0.3s ease;
+      }
+      .tunnel-url-row a {
+        color: var(--emerald);
+        font-size: 11px;
+        font-family: var(--mono);
+        text-decoration: none;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tunnel-url-row a:hover {
+        text-decoration: underline;
+      }
+      .copy-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text3);
+        font-size: 14px;
+        transition: color 0.2s;
+        padding: 0;
+        flex-shrink: 0;
+      }
+      .copy-btn:hover {
+        color: var(--emerald);
+      }
+
+      /* Card Actions */
+      .card-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .card-actions .btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        padding: 7px 10px;
+      }
+
+      /* Modal Premium */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(12px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        width: 100%;
+        max-width: 420px;
+        padding: 32px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        position: relative;
+        animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      @keyframes modalScale {
+        from {
+          transform: scale(0.95);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .modal-header h2 {
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 6px;
+        background: linear-gradient(135deg, #fff, var(--indigo));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
+      }
+      .modal-header p {
+        font-size: 14px;
+        color: var(--text3);
+        font-weight: 500;
+      }
+
+      .modal-options {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .modal-opt-btn {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 24px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: white;
+        font-family: var(--font);
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: left;
+      }
+      .modal-opt-btn:hover {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: var(--indigo);
+        transform: translateX(4px);
+      }
+      .modal-opt-btn .opt-info {
+        flex: 1;
+      }
+      .modal-opt-btn .opt-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 2px;
+        display: block;
+      }
+      .modal-opt-btn .desc {
+        font-size: 11px;
+        color: var(--text3);
+        font-weight: 400;
+        display: block;
+      }
+      .modal-opt-btn .icon {
+        font-size: 24px;
+        opacity: 0.9;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border: none;
+        color: var(--text3);
+        cursor: pointer;
+        font-size: 18px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .modal-close:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: white;
+      }
+
+      /* Mini log preview */
+      .log-preview {
+        margin-top: 14px;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+      }
+      .log-preview-title {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .log-preview-content {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        line-height: 1.6;
+        color: var(--text2);
+        max-height: 70px;
+        overflow: hidden;
+        position: relative;
+      }
+      .log-preview-content::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 24px;
+        background: linear-gradient(transparent, rgba(13, 17, 31, 0.8));
+      }
+
+      /* ─── Logs View ─────────────────────────────────────────────────────────── */
+      .logs-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 16px;
+        height: calc(100vh - 160px);
+      }
+
+      .logs-sidebar {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .logs-sidebar-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: var(--text3);
+      }
+
+      .service-list-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s;
+        position: relative;
+      }
+      .service-list-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .service-list-item.active {
+        background: rgba(99, 102, 241, 0.1);
+        border-left: 2px solid var(--indigo);
+      }
+
+      .sli-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .sli-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .sli-name {
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sli-status {
+        font-size: 10px;
+        color: var(--text3);
+      }
+      .sli-badge {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text3);
+        flex-shrink: 0;
+      }
+      .sli-badge.running {
+        background: var(--emerald);
+        box-shadow: 0 0 6px var(--emerald);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .sli-badge.starting {
+        background: var(--amber);
+        animation: pulse 1s ease-in-out infinite;
+      }
+      .sli-badge.error {
+        background: var(--red);
+      }
+
+      .all-logs-btn {
+        padding: 10px 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--indigo);
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        font-family: var(--font);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+        width: 100%;
+      }
+      .all-logs-btn:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .all-logs-btn.active {
+        background: rgba(99, 102, 241, 0.1);
+        border-left: 2px solid var(--indigo);
+      }
+
+      /* ─── Log Panel ─────────────────────────────────────────────────────────── */
+      .logs-panel {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .logs-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        flex-shrink: 0;
+      }
+
+      .logs-panel-title {
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .logs-filter-group {
+        display: flex;
+        gap: 6px;
+      }
+
+      .filter-btn {
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-family: var(--font);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: transparent;
+        color: var(--text3);
+        transition: all 0.2s;
+      }
+      .filter-btn:hover {
+        border-color: var(--border2);
+        color: var(--text);
+      }
+      .filter-btn.active {
+        color: white;
+      }
+      .filter-btn.f-all {
+        border-color: rgba(99, 102, 241, 0.3);
+      }
+      .filter-btn.f-all.active {
+        background: rgba(99, 102, 241, 0.3);
+        color: #a5b4fc;
+        border-color: rgba(99, 102, 241, 0.5);
+      }
+      .filter-btn.f-error {
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+      .filter-btn.f-error.active {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--red);
+      }
+      .filter-btn.f-warn {
+        border-color: rgba(245, 158, 11, 0.2);
+      }
+      .filter-btn.f-warn.active {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--amber);
+      }
+      .filter-btn.f-success {
+        border-color: rgba(16, 185, 129, 0.2);
+      }
+      .filter-btn.f-success.active {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--emerald);
+      }
+
+      .log-search {
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        font-size: 12px;
+        font-family: var(--font);
+        width: 160px;
+        outline: none;
+        transition: all 0.2s;
+      }
+      .log-search:focus {
+        border-color: var(--indigo);
+        background: rgba(99, 102, 241, 0.08);
+      }
+      .log-search::placeholder {
+        color: var(--text3);
+      }
+
+      /* ─── Log Output ─────────────────────────────────────────────────────────── */
+      .log-output {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        line-height: 1.7;
+      }
+
+      .log-entry {
+        display: flex;
+        gap: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: background 0.15s;
+        animation: fadeIn 0.2s ease;
+      }
+      .log-entry:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .log-entry.hidden {
+        display: none;
+      }
+
+      .log-ts {
+        color: var(--text3);
+        flex-shrink: 0;
+        font-size: 10px;
+        padding-top: 1px;
+        min-width: 80px;
+      }
+
+      .log-service-tag {
+        flex-shrink: 0;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        align-self: flex-start;
+        margin-top: 2px;
+        min-width: 70px;
+        text-align: center;
+      }
+
+      .log-line {
+        flex: 1;
+        word-break: break-all;
+        white-space: pre-wrap;
+      }
+
+      .log-entry.level-error .log-line {
+        color: #fca5a5;
+      }
+      .log-entry.level-error {
+        background: rgba(239, 68, 68, 0.05);
+      }
+      .log-entry.level-warn .log-line {
+        color: #fcd34d;
+      }
+      .log-entry.level-warn {
+        background: rgba(245, 158, 11, 0.04);
+      }
+      .log-entry.level-success .log-line {
+        color: #6ee7b7;
+      }
+      .log-entry.level-debug .log-line {
+        color: var(--debug);
+      }
+      .log-entry.level-info .log-line {
+        color: var(--text2);
+      }
+
+      .log-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text3);
+        gap: 10px;
+      }
+      .log-empty .icon {
+        font-size: 40px;
+        opacity: 0.3;
+      }
+      .log-empty p {
+        font-size: 13px;
+      }
+
+      /* ─── Animations ─────────────────────────────────────────────────────────── */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .spinning {
+        animation: spin 1s linear infinite;
+        display: inline-block;
+      }
+
+      /* ─── Toast ─────────────────────────────────────────────────────────────── */
+      #toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .toast {
+        padding: 10px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        box-shadow: var(--shadow);
+        animation: slideInRight 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 320px;
+      }
+      .toast.success {
+        border-color: rgba(16, 185, 129, 0.3);
+        color: var(--emerald);
+      }
+      .toast.error {
+        border-color: rgba(239, 68, 68, 0.3);
+        color: var(--red);
+      }
+      .toast.info {
+        border-color: rgba(99, 102, 241, 0.3);
+        color: #a5b4fc;
+      }
+
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ─── Gateway Badge ──────────────────────────────────────────────────────── */
+      .gateway-star {
+        font-size: 10px;
+        padding: 2px 8px;
+        background: linear-gradient(
+          135deg,
+          rgba(99, 102, 241, 0.2),
+          rgba(139, 92, 246, 0.2)
+        );
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 999px;
+        color: #a5b4fc;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* ─── Auto-scroll toggle ─────────────────────────────────────────────────── */
+      .autoscroll-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text3);
+        cursor: pointer;
+        user-select: none;
+      }
+      .autoscroll-btn input {
+        cursor: pointer;
+        accent-color: var(--indigo);
+      }
+      .autoscroll-btn.active {
+        color: var(--indigo);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- HEADER -->
+      <header>
+        <div class="header-brand">
+          <div class="brand-logo">🏗️</div>
+          <div class="brand-text">
+            <h1>BCS Mortgage Orchestrator</h1>
+            <p>Microservices Dev Dashboard</p>
+          </div>
+        </div>
+        <div class="header-stats">
+          <div class="stat-pill running" id="stat-running">
+            <span class="dot"></span>
+            <span id="stat-running-count">0</span> running
+          </div>
+          <div class="stat-pill error" id="stat-error" style="display: none">
+            <span class="dot"></span>
+            <span id="stat-error-count">0</span> error
+          </div>
+          <div class="stat-pill total">
+            <span class="dot"></span>
+            <span id="stat-total">7</span> total
+          </div>
+          <div class="ws-indicator">
+            <div class="ws-dot" id="ws-dot"></div>
+            <span id="ws-label">Connecting...</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="tab-group">
+            <button
+              class="tab-btn active"
+              id="tab-services"
+              onclick="switchView('services')"
+            >
+              ⚡ Services
+            </button>
+            <button class="tab-btn" id="tab-logs" onclick="switchView('logs')">
+              📋 Live Logs
+            </button>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button
+            class="btn btn-success"
+            onclick="apiAction('start-all-gateways')"
+            id="btn-start-gateways"
+          >
+            🌐 Start Gateways
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="apiAction('start-all')"
+            id="btn-start-all"
+          >
+            ▶ Start All
+          </button>
+          <button
+            class="btn btn-danger"
+            onclick="apiAction('stop-all')"
+            id="btn-stop-all"
+          >
+            ⬛ Stop All
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN -->
+      <div class="main">
+        <!-- SERVICES VIEW -->
+        <div id="view-services">
+          <div class="section-label" id="gateway-section">
+            Entry Points (Gateways)
+          </div>
+          <div class="services-grid" id="gateway-grid"></div>
+
+          <div class="section-label" id="domain-section">
+            Dominio de Negocio
+          </div>
+          <div class="services-grid" id="domain-grid"></div>
+        </div>
+
+        <!-- LOGS VIEW -->
+        <div id="view-logs" style="display: none">
+          <div class="logs-layout">
+            <!-- Sidebar -->
+            <div class="logs-sidebar">
+              <div class="logs-sidebar-header">Services</div>
+              <button
+                class="all-logs-btn active"
+                id="sli-all"
+                onclick="selectLogService('all')"
+              >
+                📋 All Logs
+              </button>
+              <div id="service-list"></div>
+            </div>
+
+            <!-- Panel -->
+            <div class="logs-panel">
+              <div class="logs-panel-header">
+                <div class="logs-panel-title">
+                  <span id="log-panel-title">All Services</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <label class="autoscroll-btn active" id="autoscroll-toggle">
+                    <input type="checkbox" id="autoscroll-check" checked />
+                    Auto-scroll
+                  </label>
+                  <div class="logs-filter-group">
+                    <button
+                      class="filter-btn f-all active"
+                      onclick="setFilter('all')"
+                    >
+                      All
+                    </button>
+                    <button
+                      class="filter-btn f-error"
+                      onclick="setFilter('error')"
+                    >
+                      Error
+                    </button>
+                    <button
+                      class="filter-btn f-warn"
+                      onclick="setFilter('warn')"
+                    >
+                      Warn
+                    </button>
+                    <button
+                      class="filter-btn f-success"
+                      onclick="setFilter('success')"
+                    >
+                      OK
+                    </button>
+                  </div>
+                  <input
+                    class="log-search"
+                    type="text"
+                    placeholder="🔍 Search logs..."
+                    id="log-search"
+                    oninput="filterLogs()"
+                  />
+                  <button class="btn btn-ghost" onclick="clearLogs()">
+                    🗑 Clear
+                  </button>
+                </div>
+              </div>
+              <div class="log-output" id="log-output">
+                <div class="log-empty">
+                  <div class="icon">📝</div>
+                  <p>No logs yet. Start a service to see logs here.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL OPEN PROJECT -->
+    <div class="modal-overlay" id="ide-modal">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-header">
+          <h2>Abrir Proyecto</h2>
+          <p id="modal-svc-name">Nombre del Microservicio</p>
+        </div>
+        <div class="modal-options">
+          <button class="modal-opt-btn" onclick="confirmOpen('antigravity')">
+            <span class="icon">🚀</span>
+            <div class="opt-info">
+              <span class="opt-title">Antigravity</span>
+              <span class="desc">Entorno de IA avanzado</span>
+            </div>
+          </button>
+          <button class="modal-opt-btn" onclick="confirmOpen('code')">
+            <span class="icon">💙</span>
+            <div class="opt-info">
+              <span class="opt-title">VS Code</span>
+              <span class="desc">Visual Studio Code</span>
+            </div>
+          </button>
+          <button class="modal-opt-btn" onclick="confirmOpen('cursor')">
+            <span class="icon">🧡</span>
+            <div class="opt-info">
+              <span class="opt-title">Cursor</span>
+              <span class="desc">AI First Code Editor</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast-container"></div>
+
+    <script>
+      // ─── State ────────────────────────────────────────────────────────────────────
+      let services = [];
+      let selectedLogService = "all";
+      let logFilter = "all";
+      let autoScroll = true;
+      let ws = null;
+      const serviceColors = {};
+
+      // ─── WS Connection ────────────────────────────────────────────────────────────
+      function connectWS() {
+        const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        ws = new WebSocket(`${protocol}//${location.host}`);
+
+        ws.onopen = () => {
+          document.getElementById("ws-dot").classList.add("connected");
+          document.getElementById("ws-label").textContent = "Connected";
+        };
+
+        ws.onclose = () => {
+          document.getElementById("ws-dot").classList.remove("connected");
+          document.getElementById("ws-label").textContent = "Reconnecting...";
+          setTimeout(connectWS, 2000);
+        };
+
+        ws.onerror = () => ws.close();
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.type === "log") handleLog(data);
+          else if (data.type === "status") handleStatus(data);
+          else if (data.type === "tunnel") handleTunnel(data);
+        };
+      }
+
+      // ─── API ──────────────────────────────────────────────────────────────────────
+      async function fetchServices() {
+        const res = await fetch("/api/services");
+        services = await res.json();
+        services.forEach((s) => (serviceColors[s.id] = s.color));
+        renderServices();
+        renderServiceList();
+        updateStats();
+      }
+
+      async function callAPI(url, method = "POST") {
+        try {
+          const res = await fetch(url, { method });
+          return await res.json();
+        } catch (e) {
+          showToast("Error: " + e.message, "error");
+          return null;
+        }
+      }
+
+      async function serviceAction(serviceId, action) {
+        const r = await callAPI(`/api/services/${serviceId}/${action}`);
+        if (r && !r.ok) showToast(r.error || "Error", "error");
+      }
+
+      async function tunnelAction(serviceId, action) {
+        const r = await callAPI(`/api/services/${serviceId}/tunnel/${action}`);
+        if (r && !r.ok) showToast(r.error || "Tunnel error", "error");
+        else if (action === "start")
+          showToast("🚇 Tunnel starting... URL will appear shortly.", "info");
+      }
+
+      async function apiAction(action) {
+        await callAPI(`/api/${action}`);
+      }
+
+      let currentModalSvcId = null;
+
+      function showOpenModal(serviceId, serviceName) {
+        currentModalSvcId = serviceId;
+        document.getElementById("modal-svc-name").textContent = serviceName;
+        document.getElementById("ide-modal").classList.add("active");
+      }
+
+      function closeModal() {
+        document.getElementById("ide-modal").classList.remove("active");
+        currentModalSvcId = null;
+      }
+
+      function confirmOpen(editor) {
+        if (currentModalSvcId) {
+          openProject(currentModalSvcId, editor);
+          closeModal();
+        }
+      }
+
+      async function openProject(serviceId, editor) {
+        const res = await fetch(`/api/services/${serviceId}/open`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ editor }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`🚀 Abriendo en ${editor}...`, "success");
+        } else {
+          showToast(`❌ Error: ${data.error}`, "error");
+        }
+      }
+
+      // ─── View Switch ──────────────────────────────────────────────────────────────
+      function switchView(view) {
+        document.getElementById("view-services").style.display =
+          view === "services" ? "block" : "none";
+        document.getElementById("view-logs").style.display =
+          view === "logs" ? "block" : "none";
+        document
+          .getElementById("tab-services")
+          .classList.toggle("active", view === "services");
+        document
+          .getElementById("tab-logs")
+          .classList.toggle("active", view === "logs");
+      }
+
+      // ─── Service Cards ────────────────────────────────────────────────────────────
+      function renderServices() {
+        const gateways = services.filter((s) => s.isGateway);
+        const domain = services.filter((s) => !s.isGateway);
+
+        document.getElementById("gateway-grid").innerHTML = gateways
+          .map(renderCard)
+          .join("");
+        document.getElementById("domain-grid").innerHTML = domain
+          .map(renderCard)
+          .join("");
+      }
+
+      function renderCard(svc) {
+        const st = svc.status;
+        const tunnelUrl = svc.tunnelUrl;
+        const isRunning = st === "running";
+        const isStopped = st === "stopped" || st === "error";
+        const hasTunnel = !!tunnelUrl;
+
+        const tunnelHtml = tunnelUrl
+          ? `
+    <div class="tunnel-url-row">
+      🌍 <a href="${tunnelUrl}" target="_blank">${tunnelUrl}</a>
+      <button class="copy-btn" onclick="copyToClipboard('${tunnelUrl}')" title="Copy URL">📋</button>
+    </div>
+  `
+          : "";
+
+        // Start / Stop button
+        let startStopBtn;
+        if (isStopped) {
+          startStopBtn = `<button class="btn btn-success" onclick="serviceAction('${svc.id}','start')">▶ Start</button>`;
+        } else if (isRunning || st === "starting") {
+          startStopBtn = `<button class="btn btn-danger" onclick="serviceAction('${svc.id}','stop')">⬛ Stop</button>`;
+        } else {
+          startStopBtn = `<button class="btn btn-ghost" disabled>…</button>`;
+        }
+
+        // Restart button
+        const restartBtn = isRunning
+          ? `<button class="btn btn-ghost" onclick="serviceAction('${svc.id}','restart')">🔄</button>`
+          : "";
+
+        // Tunnel button — always enabled for gateway services (independent of service status)
+        let tunnelBtn = "";
+        if (svc.isGateway) {
+          if (hasTunnel) {
+            tunnelBtn = `<button class="btn btn-danger" onclick="tunnelAction('${svc.id}','stop')">✂️ Kill Tunnel</button>`;
+          } else {
+            tunnelBtn = `<button class="btn btn-ghost" onclick="tunnelAction('${svc.id}','start')">🚇 Tunnel</button>`;
+          }
+        }
+
+        const logsBtn = `<button class="btn btn-ghost" onclick="goToLogs('${svc.id}')">📋 Logs</button>`;
+
+        const openBtn = `<button class="btn btn-ghost" onclick="showOpenModal('${svc.id}', '${svc.name}')">📂 Open</button>`;
+
+        return `
+    <div class="service-card status-${st}" id="card-${svc.id}" style="--color: ${svc.color}">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon" style="background: ${svc.color}22; border: 1px solid ${svc.color}44;">${svc.icon}</div>
+          <div class="card-info">
+            <h3 style="color:${svc.color}">${svc.name}</h3>
+            <p>${svc.description}</p>
+          </div>
+        </div>
+        <div class="status-badge badge-${st}">
+          <span class="dot"></span> ${st}
+        </div>
+      </div>
+      <div class="card-meta">
+        <span class="meta-chip">:${svc.port}</span>
+        ${svc.isGateway ? `<span class="meta-chip gateway">🌐 Gateway</span>` : ""}
+        <span class="meta-chip">${svc.id}</span>
+      </div>
+      ${tunnelHtml}
+      <div class="card-actions">
+        ${startStopBtn}
+        ${restartBtn}
+        ${tunnelBtn}
+        ${logsBtn}
+        ${openBtn}
+      </div>
+      <div class="log-preview" id="preview-${svc.id}">
+        <div class="log-preview-title">
+          <span>Last logs</span>
+        </div>
+        <div class="log-preview-content" id="preview-content-${svc.id}">
+          <span style="color:var(--text3); font-size:10px;">No logs yet...</span>
+        </div>
+      </div>
+    </div>
+  `;
+      }
+
+      // ─── Service List (sidebar) ───────────────────────────────────────────────────
+      function renderServiceList() {
+        const container = document.getElementById("service-list");
+        container.innerHTML = services
+          .map(
+            (svc) => `
+    <div class="service-list-item" id="sli-${svc.id}" onclick="selectLogService('${svc.id}')">
+      <span class="sli-icon">${svc.icon}</span>
+      <div class="sli-info">
+        <div class="sli-name">${svc.name}</div>
+        <div class="sli-status">::${svc.port}</div>
+      </div>
+      <span class="sli-badge ${svc.status || "stopped"}" id="sli-badge-${svc.id}"></span>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ─── Stats ────────────────────────────────────────────────────────────────────
+      function updateStats() {
+        const running = services.filter((s) => s.status === "running").length;
+        const errors = services.filter((s) => s.status === "error").length;
+        document.getElementById("stat-running-count").textContent = running;
+        document.getElementById("stat-error-count").textContent = errors;
+        document.getElementById("stat-error").style.display =
+          errors > 0 ? "flex" : "none";
+      }
+
+      // ─── Real-time Handlers ───────────────────────────────────────────────────────
+      function handleStatus({ serviceId, status, tunnelUrl }) {
+        const svc = services.find((s) => s.id === serviceId);
+        if (!svc) return;
+        svc.status = status;
+        if (tunnelUrl !== undefined) svc.tunnelUrl = tunnelUrl;
+
+        // Re-render card
+        const card = document.getElementById(`card-${serviceId}`);
+        if (card) {
+          const temp = document.createElement("div");
+          temp.innerHTML = renderCard(svc);
+          card.replaceWith(temp.firstElementChild);
+        }
+
+        // Update sidebar badge
+        const badge = document.getElementById(`sli-badge-${serviceId}`);
+        if (badge) {
+          badge.className = `sli-badge ${status}`;
+        }
+
+        // Update sidebar item status text
+        const sliStatus = document.querySelector(
+          `#sli-${serviceId} .sli-status`,
+        );
+        if (sliStatus) sliStatus.textContent = status;
+
+        updateStats();
+      }
+
+      function handleTunnel({ serviceId, url }) {
+        const svc = services.find((s) => s.id === serviceId);
+        if (!svc) return;
+        svc.tunnelUrl = url;
+
+        const card = document.getElementById(`card-${serviceId}`);
+        if (card) {
+          const temp = document.createElement("div");
+          temp.innerHTML = renderCard(svc);
+          card.replaceWith(temp.firstElementChild);
+        }
+
+        if (url) showToast(`🌍 Tunnel ready: ${url}`, "success");
+      }
+
+      function handleLog({ serviceId, line, level, ts }) {
+        // Update mini preview in card
+        updatePreview(serviceId, line, level);
+
+        // Add to log output if relevant
+        if (selectedLogService === "all" || selectedLogService === serviceId) {
+          appendLogEntry({ serviceId, line, level, ts });
+        }
+      }
+
+      function updatePreview(serviceId, line) {
+        const el = document.getElementById(`preview-content-${serviceId}`);
+        if (!el) return;
+        const span = document.createElement("div");
+        span.style.cssText =
+          "white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text2);";
+        span.textContent = line;
+        // Keep only last 3 lines
+        while (el.children.length >= 3) el.removeChild(el.firstChild);
+        el.appendChild(span);
+      }
+
+      // ─── Log Rendering ────────────────────────────────────────────────────────────
+      let logEntries = []; // { serviceId, line, level, ts, el }
+
+      function appendLogEntry({ serviceId, line, level, ts }) {
+        const output = document.getElementById("log-output");
+
+        // Remove empty state
+        const empty = output.querySelector(".log-empty");
+        if (empty) empty.remove();
+
+        const svc = services.find((s) => s.id === serviceId);
+        const color = svc?.color || "#6366f1";
+        const name = svc?.name || serviceId;
+
+        const entry = document.createElement("div");
+        entry.className = `log-entry level-${level}`;
+        entry.dataset.serviceId = serviceId;
+        entry.dataset.level = level;
+        entry.dataset.line = line.toLowerCase();
+
+        const timeStr = ts
+          ? new Date(ts).toLocaleTimeString("es-CO", { hour12: false })
+          : "";
+
+        entry.innerHTML = `
+    <span class="log-ts">${timeStr}</span>
+    <span class="log-service-tag" style="background:${color}22; color:${color}; border:1px solid ${color}44">${name}</span>
+    <span class="log-line">${escapeHtml(line)}</span>
+  `;
+
+        logEntries.push(entry);
+
+        // Limit DOM entries to 1000
+        if (logEntries.length > 1000) {
+          const old = logEntries.shift();
+          old.remove();
+        }
+
+        applyFiltersToEntry(entry);
+        output.appendChild(entry);
+
+        if (autoScroll) output.scrollTop = output.scrollHeight;
+      }
+
+      function applyFiltersToEntry(entry) {
+        const levelMatch =
+          logFilter === "all" || entry.dataset.level === logFilter;
+        const svcMatch =
+          selectedLogService === "all" ||
+          entry.dataset.serviceId === selectedLogService;
+        const searchVal = document
+          .getElementById("log-search")
+          .value.toLowerCase();
+        const searchMatch =
+          !searchVal || entry.dataset.line.includes(searchVal);
+
+        entry.classList.toggle(
+          "hidden",
+          !(levelMatch && svcMatch && searchMatch),
+        );
+      }
+
+      function filterLogs() {
+        logEntries.forEach(applyFiltersToEntry);
+      }
+
+      function setFilter(f) {
+        logFilter = f;
+        document
+          .querySelectorAll(".filter-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.querySelector(`.filter-btn.f-${f}`).classList.add("active");
+        filterLogs();
+      }
+
+      function selectLogService(id) {
+        selectedLogService = id;
+
+        // Update sidebar active state
+        document
+          .getElementById("sli-all")
+          .classList.toggle("active", id === "all");
+        document
+          .querySelectorAll(".service-list-item")
+          .forEach((el) => el.classList.remove("active"));
+        if (id !== "all") {
+          const item = document.getElementById(`sli-${id}`);
+          if (item) item.classList.add("active");
+        }
+
+        // Update panel title
+        const svc = services.find((s) => s.id === id);
+        document.getElementById("log-panel-title").textContent = svc
+          ? `${svc.icon} ${svc.name}`
+          : "📋 All Services";
+
+        filterLogs();
+      }
+
+      function goToLogs(serviceId) {
+        switchView("logs");
+        selectLogService(serviceId);
+      }
+
+      async function clearLogs() {
+        if (selectedLogService === "all") {
+          // Clear all
+          for (const svc of services) {
+            await fetch(`/api/logs/${svc.id}`, { method: "DELETE" });
+          }
+        } else {
+          await fetch(`/api/logs/${selectedLogService}`, { method: "DELETE" });
+        }
+        // Remove from DOM
+        const toRemove = logEntries.filter(
+          (e) =>
+            selectedLogService === "all" ||
+            e.dataset.serviceId === selectedLogService,
+        );
+        toRemove.forEach((e) => {
+          e.remove();
+        });
+        logEntries = logEntries.filter(
+          (e) =>
+            selectedLogService !== "all" &&
+            e.dataset.serviceId !== selectedLogService,
+        );
+
+        const output = document.getElementById("log-output");
+        if (logEntries.length === 0) {
+          output.innerHTML = `
+      <div class="log-empty">
+        <div class="icon">📝</div>
+        <p>No logs yet. Start a service to see logs here.</p>
+      </div>`;
+        }
+        showToast("Logs cleared", "info");
+      }
+
+      // ─── Load existing logs on page open ─────────────────────────────────────────
+      async function loadInitialLogs() {
+        for (const svc of services) {
+          const res = await fetch(`/api/logs/${svc.id}?limit=50`);
+          const logs = await res.json();
+          logs.forEach((entry) => appendLogEntry(entry));
+        }
+      }
+
+      // ─── Autoscroll toggle ────────────────────────────────────────────────────────
+      document.addEventListener("DOMContentLoaded", () => {
+        const check = document.getElementById("autoscroll-check");
+        check.addEventListener("change", () => {
+          autoScroll = check.checked;
+          document
+            .getElementById("autoscroll-toggle")
+            .classList.toggle("active", autoScroll);
+        });
+      });
+
+      // ─── Helpers ──────────────────────────────────────────────────────────────────
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => showToast("📋 URL copied!", "success"));
+      }
+
+      function showToast(msg, type = "info") {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+      }
+
+      // ─── Init ─────────────────────────────────────────────────────────────────────
+      (async () => {
+        await fetchServices();
+        await loadInitialLogs();
+        connectWS();
+      })();
+    </script>
+  </body>
+</html>

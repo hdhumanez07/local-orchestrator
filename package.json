@@ -1,0 +1,17 @@
+{
+  "name": "bcs-mortgage-orchestrator",
+  "version": "1.0.0",
+  "description": "Microservices DevOps Dashboard for BCS Mortgage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "BCS Mortgage Team",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  }
+}
