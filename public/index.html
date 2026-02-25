@@ -316,6 +316,16 @@
         background: rgba(239, 68, 68, 0.2);
       }
 
+      .btn-nuclear {
+        background: rgba(249, 115, 22, 0.12);
+        color: #f97316;
+        border-color: rgba(249, 115, 22, 0.2);
+      }
+      .btn-nuclear:hover {
+        background: rgba(249, 115, 22, 0.2);
+        box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+      }
+
       .btn-success {
         background: rgba(16, 185, 129, 0.12);
         color: var(--emerald);
@@ -1244,6 +1254,14 @@
           >
             ⬛ Stop All
           </button>
+          <button
+            class="btn btn-nuclear"
+            onclick="killAllNodeProcesses()"
+            id="btn-kill-node"
+            title="Nuclear option: Kill all Node.js processes on the system except this orchestrator"
+          >
+            💀 Kill Node
+          </button>
         </div>
       </div>
 
@@ -1445,6 +1463,23 @@
 
       async function apiAction(action) {
         await callAPI(`/api/${action}`);
+      }
+
+      async function killAllNodeProcesses() {
+        if (
+          confirm(
+            "⚠️ ¿ESTÁS SEGURO?\n\nEsto matará TODOS los procesos de Node.js en tu sistema (excepto este orquestador).\n\nÚsalo solo si hay procesos 'zombie' o bloqueados que no se detienen normalmente.",
+          )
+        ) {
+          showToast("💀 Ejecutando Kill Nuclear...", "error");
+          const res = await fetch("/api/kill-all-node", { method: "POST" });
+          const data = await res.json();
+          if (data.ok) {
+            showToast("✅ Procesos eliminados", "success");
+          } else {
+            showToast(`❌ Error: ${data.error}`, "error");
+          }
+        }
       }
 
       let currentModalSvcId = null;

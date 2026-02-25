@@ -81,6 +81,15 @@ const MICROSERVICES = [
     icon: '📊',
     description: 'Reports generation service',
   },
+  {
+    id: 'simulator',
+    name: 'Simulator',
+    path: path.join(BASE_PATH, 'bcs-mortgage-simulator'),
+    port: 3007,
+    color: '#ecdfdfff',
+    icon: '📊',
+    description: 'Simulator service',
+  },
 ];
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -387,8 +396,7 @@ app.post('/api/services/:serviceId/open', (req, res) => {
       command = `code "${svc.path}"`;
       break;
     case 'antigravity':
-      // Siendo Antigravity, usualmente estamos en un entorno donde 'code' o 'open' funciona
-      command = `code "${svc.path}"`;
+      command = `antigravity "${svc.path}"`;
       break;
     default:
       command = `open "${svc.path}"`;
@@ -409,6 +417,35 @@ app.post('/api/services/:serviceId/open', (req, res) => {
 app.post('/api/stop-all', (req, res) => {
   const results = MICROSERVICES.map((s) => ({ id: s.id, result: stopService(s.id) }));
   res.json(results);
+});
+
+// Nuclear option: Kill all Node processes except orchestrator
+app.post('/api/kill-all-node', (req, res) => {
+  const currentPid = process.pid;
+
+  // macOS/Linux command to kill all node processes except the current one
+  // ps -A -o pid,comm | grep node | grep -v <currentPid>
+  const command = os.platform() === 'win32'
+    ? `taskkill /F /IM node.exe /FI "PID ne ${currentPid}"`
+    : `ps -A -o pid,comm | grep node | grep -v ${currentPid} | awk '{print $1}' | xargs kill -9`;
+
+  console.log(`💀 Executing Nuclear Kill: ${command}`);
+
+  exec(command, (error) => {
+    // Reset internal state for all services as they are definitely dead
+    MICROSERVICES.forEach((svc) => {
+      if (processes[svc.id]) {
+        delete processes[svc.id];
+        broadcastStatus(svc.id, 'stopped');
+        broadcastLog(svc.id, '💀 PROCESO TERMINADO FORZOSAMENTE (System Kill)', 'error');
+      }
+    });
+
+    if (error && !error.message.includes('Usage')) {
+      return res.json({ ok: false, error: error.message });
+    }
+    res.json({ ok: true });
+  });
 });
 
 // ─── WebSocket Handler ────────────────────────────────────────────────────────
